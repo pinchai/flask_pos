@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit' if product else 'Create' }} Product | AdminLTE{% endblock %}
+{% block header %}{{ 'Edit' if product else 'Create' }} Product{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Product Details</h3>
+      </div>
+      <form action="{{ url_for('dashboard.edit_product', product_id=product.id) if product else url_for('dashboard.create_product') }}" method="post" enctype="multipart/form-data">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="name">Product Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Enter product name" value="{{ product.name if product else '' }}" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="category_id">Category <span class="text-danger">*</span></label>
+                <select name="category_id" id="category_id" class="form-control" required>
+                  {% for c in categories %}
+                    <option value="{{ c.id }}" {% if product and product.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="cost">Cost <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="cost" id="cost" class="form-control" placeholder="Enter cost price" value="{{ product.cost if product else '0.00' }}" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="price">Selling Price <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="price" id="price" class="form-control" placeholder="Enter selling price" value="{{ product.price if product else '0.00' }}" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="stock">Stock Quantity <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="stock" id="stock" class="form-control" placeholder="Enter stock level" value="{{ product.stock if product else '0.00' }}" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="image">Product Image File</label>
+                <input type="file" name="image" id="image" class="form-control-file" accept="image/*">
+                {% if product and product.image %}
+                  <div class="mt-2">
+                    <small class="text-muted text-xs">Current Image:</small><br>
+                    <img src="{{ product.image }}" alt="product image" style="max-height: 80px;" class="img-thumbnail">
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="remark">Remark</label>
+                <input type="text" name="remark" id="remark" class="form-control" placeholder="Enter remark" value="{{ product.remark if product else '' }}">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="user_id">Created By (User) <span class="text-danger">*</span></label>
+                <select name="user_id" id="user_id" class="form-control" required>
+                  {% for u in users %}
+                    <option value="{{ u.id }}" {% if product and product.user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">Submit</button>
+          <a href="{{ url_for('dashboard.list_products') }}" class="btn btn-default">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

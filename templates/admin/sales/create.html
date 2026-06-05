@@ -1,0 +1,278 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Create Sale | AdminLTE{% endblock %}
+{% block header %}Create New Sale{% endblock %}
+
+{% block content %}
+<form action="{{ url_for('dashboard.create_sale') }}" method="post" id="sale-form">
+  <div class="row">
+    <!-- Left Column: Sale Header Information -->
+    <div class="col-md-6">
+      <div class="card card-primary">
+        <div class="card-header">
+          <h3 class="card-title">Transaction Details</h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="shop_id">Shop <span class="text-danger">*</span></label>
+                <select name="shop_id" id="shop_id" class="form-control" required>
+                  <option value="" disabled selected>Select Shop</option>
+                  {% for s in shops %}
+                    <option value="{{ s.id }}">{{ s.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="user_id">Salesperson (User) <span class="text-danger">*</span></label>
+                <select name="user_id" id="user_id" class="form-control" required>
+                  <option value="" disabled selected>Select User</option>
+                  {% for u in users %}
+                    <option value="{{ u.id }}" {% if current_user.id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="payment_method_id">Payment Method <span class="text-danger">*</span></label>
+                <select name="payment_method_id" id="payment_method_id" class="form-control" required>
+                  <option value="" disabled selected>Select Payment Method</option>
+                  {% for pm in payment_methods %}
+                    <option value="{{ pm.id }}">{{ pm.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="discount_pct">Discount (%)</label>
+                <input type="number" name="discount_pct" id="discount_pct" class="form-control" min="0" max="100" value="0" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="discount_amount">Discount Amount ($)</label>
+                <input type="number" step="0.01" name="discount_amount" id="discount_amount" class="form-control" value="0.00" readonly>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="paid_amount">Paid Amount ($)</label>
+                <input type="number" step="0.01" name="paid_amount" id="paid_amount" class="form-control" value="0.00" required>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Add Products and Item List -->
+    <div class="col-md-6">
+      <!-- Add Item Card -->
+      <div class="card card-secondary">
+        <div class="card-header">
+          <h3 class="card-title">Add Products</h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="form-group">
+                <label for="product_select">Product</label>
+                <select id="product_select" class="form-control">
+                  <option value="" disabled selected>Select Product</option>
+                  {% for p in products %}
+                    <option value="{{ p.id }}" data-price="{{ p.price }}">{{ p.name }} (${{ p.price }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <div class="form-group">
+                <label for="qty_input">Quantity</label>
+                <input type="number" id="qty_input" class="form-control" min="1" value="1">
+              </div>
+            </div>
+            <div class="col-sm-3 d-flex align-items-end">
+              <div class="form-group w-100">
+                <button type="button" id="add-item-btn" class="btn btn-success btn-block"><i class="fas fa-plus mr-1"></i> Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Item List Card -->
+      <div class="card card-outline card-success">
+        <div class="card-header">
+          <h3 class="card-title">Sale Items</h3>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-striped" id="items-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-12 text-right">
+              <h5>Subtotal: $<span id="gross-subtotal">0.00</span></h5>
+              <h5>Discount: -$<span id="display-discount">0.00</span></h5>
+              <h4><strong>Total: $<span id="net-total">0.00</span></strong></h4>
+              <input type="hidden" name="total" id="total_input" value="0.00">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-5">
+    <div class="col-12">
+      <button type="submit" class="btn btn-success float-right"><i class="fas fa-save mr-1"></i> Save Sale</button>
+      <a href="{{ url_for('dashboard.list_sales') }}" class="btn btn-default"><i class="fas fa-times mr-1"></i> Cancel</a>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    let items = [];
+
+    $('#add-item-btn').click(function() {
+        let pSelect = $('#product_select');
+        let productId = pSelect.val();
+        let productName = pSelect.find('option:selected').text().split(' ($')[0];
+        let price = parseFloat(pSelect.find('option:selected').data('price'));
+        let qty = parseInt($('#qty_input').val());
+
+        if (!productId) {
+            alert('Please select a product.');
+            return;
+        }
+        if (isNaN(qty) || qty <= 0) {
+            alert('Please enter a valid quantity.');
+            return;
+        }
+
+        // Check if product already exists in items list
+        let existingIndex = items.findIndex(item => item.product_id === productId);
+        if (existingIndex !== -1) {
+            items[existingIndex].qty += qty;
+        } else {
+            items.push({
+                product_id: productId,
+                name: productName,
+                price: price,
+                qty: qty
+            });
+        }
+
+        renderItems();
+        // Reset selections
+        pSelect.val('');
+        $('#qty_input').val(1);
+    });
+
+    $(document).on('click', '.remove-item', function() {
+        let index = $(this).data('index');
+        items.splice(index, 1);
+        renderItems();
+    });
+
+    $('#discount_pct').on('input', function() {
+        recalculateTotals();
+    });
+
+    function renderItems() {
+        let tbody = $('#items-table tbody');
+        tbody.empty();
+
+        if (items.length === 0) {
+            tbody.append('<tr><td colspan="5" class="text-center">No items added.</td></tr>');
+            recalculateTotals();
+            return;
+        }
+
+        items.forEach((item, index) => {
+            let rowSubtotal = (item.price * item.qty).toFixed(2);
+            tbody.append(`
+                <tr>
+                    <td>
+                        ${item.name}
+                        <input type="hidden" name="product_ids[]" value="${item.product_id}">
+                        <input type="hidden" name="qtys[]" value="${item.qty}">
+                    </td>
+                    <td>$${item.price.toFixed(2)}</td>
+                    <td>${item.qty}</td>
+                    <td>$${rowSubtotal}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-xs remove-item" data-index="${index}">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </td>
+                </tr>
+            `);
+        });
+
+        recalculateTotals();
+    }
+
+    function recalculateTotals() {
+        let grossSubtotal = 0;
+        items.forEach(item => {
+            grossSubtotal += item.price * item.qty;
+        });
+
+        let discountPct = parseFloat($('#discount_pct').val()) || 0;
+        if (discountPct < 0) discountPct = 0;
+        if (discountPct > 100) discountPct = 100;
+
+        let discountAmount = grossSubtotal * (discountPct / 100);
+        let netTotal = grossSubtotal - discountAmount;
+
+        $('#gross-subtotal').text(grossSubtotal.toFixed(2));
+        $('#discount_amount').val(discountAmount.toFixed(2));
+        $('#display-discount').text(discountAmount.toFixed(2));
+        $('#net-total').text(netTotal.toFixed(2));
+        $('#total_input').val(netTotal.toFixed(NetTotalPrecision(netTotal)));
+        
+        // Match paid amount with net total automatically if user hasn't edited it yet
+        let paidInput = $('#paid_amount');
+        if (parseFloat(paidInput.val()) === 0 || paidInput.val() === "") {
+            paidInput.val(netTotal.toFixed(2));
+        }
+    }
+
+    function NetTotalPrecision(val) {
+        return 2;
+    }
+
+    $('#sale-form').submit(function(e) {
+        if (items.length === 0) {
+            alert('Please add at least one item to save the sale.');
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Classic POS Terminal</title>
+  <!-- Bootstrap 4 (local build copied from pos_screen/dist) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='pos/boostrap.css') }}">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  
+  <style>
+    body {
+      background-color: #f4f6f9;
+      color: #212529;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden; /* Fit to screen and prevent window scroll */
+    }
+
+    /* POS Header styling */
+    .pos-header {
+      background-color: #ffffff;
+      border-bottom: 2px solid #dee2e6;
+      padding: 12px 20px;
+      color: #212529;
+    }
+
+    /* Receipt Paper styling */
+    .receipt-paper {
+      background-color: #ffffff;
+      color: #212529;
+      font-family: "Courier New", Courier, monospace;
+      padding: 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid #dee2e6;
+      border-top: 5px solid #ffc107;
+      height: calc(100vh - 550px); /* Fit exactly to screen height */
+      min-height: 150px;
+      overflow-y: auto;
+    }
+
+    .receipt-line {
+      border-top: 1px dashed #ced4da;
+      margin: 8px 0;
+    }
+
+    .cart-items-container {
+      border-top: 1px dashed #ced4da;
+      border-bottom: 1px dashed #ced4da;
+    }
+
+    .cart-item-row {
+      border-bottom: 1px dashed #e9ecef;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+
+    .cart-item-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    /* Numeric Pad grid layout */
+    .numpad-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 8px;
+      margin-top: 10px;
+    }
+
+    .numpad-btn {
+      height: 52px;
+      font-size: 1.25rem;
+      font-weight: bold;
+      border-radius: 4px;
+      border: 1px solid #ced4da;
+      background-color: #f8f9fa;
+      color: #212529;
+      transition: all 0.1s;
+    }
+
+    .numpad-btn:active, .numpad-btn:hover {
+      background-color: #ffc107;
+      color: #212529;
+      border-color: #ffc107;
+    }
+
+    .numpad-btn.btn-action {
+      background-color: #e9ecef;
+      border-color: #ced4da;
+    }
+
+    .numpad-btn.btn-cash {
+      background-color: #28a745;
+      border-color: #28a745;
+      color: #ffffff;
+      font-size: 1rem;
+    }
+
+    .numpad-btn.btn-cash:hover {
+      background-color: #218838;
+      border-color: #1e7e34;
+      color: #fff;
+    }
+
+    /* Left Billing panel */
+    .billing-panel {
+      background-color: #ffffff;
+      border-right: 2px solid #dee2e6;
+      height: calc(100vh - 60px);
+      overflow-y: hidden; /* Prevent billing panel scrolling, elements fit screen */
+      padding: 35px;
+      color: #212529;
+    }
+
+    /* Right Catalog panel */
+    .catalog-panel {
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 35px;
+    }
+
+    /* Category tabs */
+    .category-nav {
+      display: flex;
+      flex-wrap: wrap; /* Wrap tabs to prevent horizontal scrolling */
+      gap: 6px;
+      padding-bottom: 8px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .category-tab {
+      padding: 8px 18px;
+      background-color: #ffffff;
+      color: #495057;
+      border: 1px solid #dee2e6;
+      border-radius: 4px; /* Clean rounded button pills */
+      white-space: nowrap;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .category-tab.active, .category-tab:hover {
+      background-color: #ffc107;
+      color: #212529;
+      border-color: #ffc107;
+    }
+
+    /* Product Grid layout */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      grid-gap: 12px;
+      padding-bottom: 40px;
+    }
+
+    .product-tile {
+      background-color: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      user-select: none;
+      color: #212529;
+    }
+
+    .product-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: #ffc107;
+    }
+
+    .product-tile.out-of-stock {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .product-tile-img {
+      height: 60px;
+      object-fit: contain;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      background-color: #fff;
+      padding: 4px;
+    }
+
+    .product-tile-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      height: 36px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-height: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .product-tile-price {
+      color: #28a745;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .product-tile-stock {
+      font-size: 0.7rem;
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* Hide scrollbar scroll thumbs (globally disable scrollbars visually) */
+    ::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    * {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+  </style>
+</head>
+<body>
+
+<div id="app" class="container-fluid p-0">
+  <!-- Top Operator Header -->
+  <div class="pos-header d-flex justify-content-between align-items-center shadow-sm">
+    <h4 class="m-0 font-weight-bold"><i class="fas fa-cash-register mr-2 text-warning"></i> Classic POS Terminal</h4>
+    <div class="d-flex align-items-center">
+      <span class="mr-4 text-sm text-muted">Register: <strong class="text-dark">[[ shopName ]]</strong></span>
+      <span class="mr-4 text-sm text-muted">Operator: <strong class="text-dark">{{ current_user.username }}</strong></span>
+      <a href="{{ url_for('dashboard.admin_index') }}" class="btn btn-sm btn-outline-dark"><i class="fas fa-arrow-left mr-1"></i> Back to Dashboard</a>
+    </div>
+  </div>
+
+  <div class="row no-gutters">
+    <!-- Left Column: Checkout Ticket & Numpad -->
+    <div class="col-lg-5 col-md-6 billing-panel p-2">
+      
+      <!-- Branch / Payment configurations -->
+      <div class="row mb-2">
+        <div class="col-6">
+          <div class="form-group mb-2">
+            <select class="form-control form-control-sm bg-light text-dark border-secondary" v-model="shop_id">
+              <option value="" disabled>Select Shop Location</option>
+              {% for s in shops %}
+                <option value="{{ s.id }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group mb-2">
+            <select class="form-control form-control-sm bg-light text-dark border-secondary" v-model="payment_method_id">
+              <option value="" disabled>Select Payment Method</option>
+              {% for pm in payment_methods %}
+                <option value="{{ pm.id }}">{{ pm.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Receipt Paper ticket -->
+      <div class="receipt-paper mb-3">
+        <div class="text-center font-weight-bold" style="font-size: 1.1rem; letter-spacing: 1px;">RECEIPT LOG</div>
+        <div class="text-center text-xs text-muted mb-1">Items: [[ selected_product_list.length ]] | Total Qty: [[ totalQty ]]</div>
+        <div class="text-center text-xs text-muted mb-2">[[ timestamp ]]</div>
+        <!-- Cart Items Container -->
+        <div class="cart-items-container py-3 my-2">
+          <!-- Cart Items -->
+          <div v-for="(item, index) in selected_product_list" :key="index" class="d-flex justify-content-between align-items-center text-sm cart-item-row">
+            <div class="text-truncate mr-2">
+              <span>[[ index + 1 ]]. [[ item.title ]]</span>
+              <span class="text-muted ml-1 font-italic">
+                (<span class="font-weight-bold text-dark border-bottom border-secondary" style="cursor: pointer; border-bottom-style: dotted !important;" @click="modifyQty(index)" title="Click to modify quantity">[[ item.qty ]]</span> x $[[ item.price.toFixed(2) ]])
+              </span>
+            </div>
+            <div class="font-weight-bold text-nowrap">
+              $[[ (item.qty * item.price).toFixed(2) ]]
+              <button class="btn btn-link btn-xs text-danger p-0 ml-2" @click="removeItem(index)"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+          
+          <div v-if="selected_product_list.length === 0" class="text-center py-4 text-muted">
+            === CART EMPTY ===<br>
+            Select products on the right to start.
+          </div>
+        </div>
+
+        <!-- Totals calculation -->
+
+        <div v-if="discount_pct > 0" class="d-flex justify-content-between text-sm text-success">
+          <span>Discount ([[ discount_pct ]]%):</span>
+          <span>-$[[ discountAmount.toFixed(2) ]]</span>
+        </div>
+        
+
+      </div>
+
+      <!-- Received Amount Section -->
+      <div class="row no-gutters bg-light p-3 rounded mb-2 border border-secondary align-items-center">
+        <!-- TOTAL DUE -->
+        <div class="col-4">
+          <span class="text-xs font-weight-bold text-muted d-block mb-1">TOTAL DUE</span>
+          <span class="font-weight-bold text-dark" style="font-size: 1.35rem;">$[[ netTotalUsd.toFixed(2) ]]</span>
+          <span class="d-block text-xs text-muted">[[ netTotalKhr.toLocaleString() ]] ៛</span>
+        </div>
+        
+        <!-- RECEIVED AMOUNT -->
+        <div class="col-4 border-left border-secondary pl-3">
+          <div class="form-group mb-0">
+            <label class="text-xs font-weight-bold text-primary mb-1">RECEIVED (USD)</label>
+            <div class="d-flex align-items-center">
+              <span class="mr-2 font-weight-bold text-lg text-primary">$</span>
+              <input 
+                type="text" 
+                class="form-control form-control-lg bg-transparent text-primary font-weight-bold text-right border-0 p-0"
+                style="font-size: 1.8rem;"
+                v-model="receivedInput"
+                readonly
+              >
+            </div>
+          </div>
+        </div>
+        
+        <!-- CHANGE DUE -->
+        <div class="col-4 border-left border-secondary pl-3">
+          <span class="text-xs font-weight-bold text-danger d-block mb-1">CHANGE DUE</span>
+          <span class="font-weight-bold text-danger" style="font-size: 1.35rem;">$[[ changeUsd.toFixed(2) ]]</span>
+          <span class="d-block text-xs text-muted text-danger">[[ changeKhr.toLocaleString() ]] ៛</span>
+        </div>
+      </div>
+
+      <!-- Discount Presets -->
+      <div class="row mb-2">
+        <div class="col-12">
+          <span class="text-xs font-weight-bold text-muted mb-1 d-block">DISCOUNT PRESETS (Active: [[ discount_pct ]]%)</span>
+          <div class="d-flex flex-wrap" style="gap: 5px;">
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 0 }" @click="discount_pct = 0">0%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 10 }" @click="discount_pct = 10">10%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 20 }" @click="discount_pct = 20">20%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 30 }" @click="discount_pct = 30">30%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 40 }" @click="discount_pct = 40">40%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 50 }" @click="discount_pct = 50">50%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 60 }" @click="discount_pct = 60">60%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 70 }" @click="discount_pct = 70">70%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 80 }" @click="discount_pct = 80">80%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 90 }" @click="discount_pct = 90">90%</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" :class="{ active: discount_pct === 100 }" @click="discount_pct = 100">100%</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Cash Controls -->
+      <div class="row mt-2">
+        <div class="col-12">
+          <span class="text-xs font-weight-bold text-muted mb-1 d-block">QUICK CASH INPUT</span>
+          <div class="d-flex flex-wrap" style="gap: 8px;">
+            <button type="button" class="btn btn-lg btn-outline-success font-weight-bold flex-grow-1" style="min-width: 80px;" @click="quickCash(5)">+$5</button>
+            <button type="button" class="btn btn-lg btn-outline-success font-weight-bold flex-grow-1" style="min-width: 80px;" @click="quickCash(10)">+$10</button>
+            <button type="button" class="btn btn-lg btn-outline-success font-weight-bold flex-grow-1" style="min-width: 80px;" @click="quickCash(20)">+$20</button>
+            <button type="button" class="btn btn-lg btn-outline-success font-weight-bold flex-grow-1" style="min-width: 80px;" @click="quickCash(50)">+$50</button>
+            <button type="button" class="btn btn-lg btn-outline-success font-weight-bold flex-grow-1" style="min-width: 80px;" @click="quickCash(100)">+$100</button>
+          </div>
+          <div class="d-flex mt-2" style="gap: 8px;">
+            <button type="button" class="btn btn-outline-secondary flex-grow-1" @click="receivedInput = '0.00'"><i class="fas fa-undo mr-1"></i> Clear Cash</button>
+            <button type="button" class="btn btn-outline-primary flex-grow-1 font-weight-bold" @click="receivedInput = netTotalUsd.toFixed(2)"><i class="fas fa-equals mr-1"></i> Match Total</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer buttons -->
+      <div class="row mt-4 mb-2">
+        <div class="col-6">
+          <button type="button" class="btn btn-lg btn-outline-danger btn-block font-weight-bold" @click="cancelSale"><i class="fas fa-trash-alt mr-1"></i> CLEAR CART</button>
+        </div>
+        <div class="col-6">
+          <button type="button" class="btn btn-lg btn-outline-warning btn-block font-weight-bold" @click="payNow" :disabled="selected_product_list.length === 0"><i class="fas fa-check-circle mr-1"></i> PAY & SAVE</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Catalog Grid & Search -->
+    <div class="col-lg-7 col-md-6 catalog-panel p-2">
+      <!-- Search filter -->
+      <div class="row mb-3">
+        <div class="col-md-8 mb-2">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text bg-light border-secondary text-muted"><i class="fas fa-search"></i></span>
+            </div>
+            <input type="text" class="form-control bg-white text-dark border-secondary" placeholder="Search product name or filter keys..." v-model="search_query">
+          </div>
+        </div>
+        <div class="col-md-4 mb-2">
+          <button class="btn btn-outline-secondary btn-block" @click="clearSearch"><i class="fas fa-eraser mr-1"></i> Reset Filters</button>
+        </div>
+      </div>
+
+      <!-- Category selectors tabs -->
+      <div class="category-nav">
+        <div 
+          class="category-tab" 
+          :class="{ active: filter_category === '' }"
+          @click="filter_category = ''"
+        >
+          All Items
+        </div>
+        <div 
+          v-for="cat in categories" 
+          :key="cat"
+          class="category-tab"
+          :class="{ active: filter_category === cat }"
+          @click="filter_category = cat"
+        >
+          [[ cat ]]
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="product-grid">
+        <div 
+          v-for="(item, index) in filteredProducts"
+          :key="index"
+          class="product-tile"
+          :class="{ 'out-of-stock': item.stock <= 0 }"
+          @click="productCardOnClick(item)"
+        >
+          <!-- Stock status -->
+          <span 
+            class="product-tile-stock badge"
+            :class="item.stock > 0 ? 'badge-success' : 'badge-danger'"
+          >
+            [[ item.stock > 0 ? 'Stock: ' + Math.round(item.stock) : 'Out of stock' ]]
+          </span>
+          
+          <img :src="item.image" class="product-tile-img" alt="product icon">
+          <div class="product-tile-title" :title="item.title">[[ item.title ]]</div>
+          <div class="product-tile-price">$[[ item.price.toFixed(2) ]]</div>
+        </div>
+
+        <div v-if="filteredProducts.length === 0" class="col-12 text-center py-5">
+          <h4 class="text-muted"><i class="fas fa-box-open mr-2 d-block text-lg mb-2"></i> No matching products in this category.</h4>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{{ url_for('static', filename='pos/boostrap.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ url_for('static', filename='pos/vue.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+
+<script>
+  const { createApp } = Vue;
+
+  createApp({
+    delimiters: ['[[', ']]'],
+    created() {
+      this.fetchProducts();
+      this.updateTime();
+      setInterval(this.updateTime, 1000);
+    },
+    data() {
+      return {
+        product_list: [],
+        selected_product_list: [],
+        search_query: '',
+        filter_category: '',
+        shop_id: '1',  // Set default shop location
+        payment_method_id: '1', // Set default payment method
+        discount_pct: 0,
+        receivedInput: '0.00',
+        timestamp: '',
+        operatorName: '{{ current_user.username }}'
+      };
+    },
+    computed: {
+      categories() {
+        const cats = this.product_list.map(p => p.category);
+        return [...new Set(cats)];
+      },
+      filteredProducts() {
+        return this.product_list.filter(p => {
+          const matchSearch = p.title.toLowerCase().includes(this.search_query.toLowerCase());
+          const matchCat = this.filter_category === '' || p.category === this.filter_category;
+          return matchSearch && matchCat;
+        });
+      },
+      shopName() {
+        // Return active shop location name if selected
+        if (this.shop_id === '1') return 'Main Branch';
+        if (this.shop_id === '2') return 'Downtown Shop';
+        if (this.shop_id === '3') return 'Campus Cafe';
+        return 'Not Selected';
+      },
+      subtotalUsd() {
+        return this.selected_product_list.reduce((acc, item) => {
+          return acc + (item.price * (parseInt(item.qty) || 0));
+        }, 0);
+      },
+      discountAmount() {
+        const pct = Math.min(Math.max(parseFloat(this.discount_pct) || 0, 0), 100);
+        return this.subtotalUsd * (pct / 100);
+      },
+      netTotalUsd() {
+        return Math.max(this.subtotalUsd - this.discountAmount, 0);
+      },
+      netTotalKhr() {
+        return Math.round(this.netTotalUsd * 4000);
+      },
+      totalQty() {
+        return this.selected_product_list.reduce((acc, item) => acc + (parseInt(item.qty) || 0), 0);
+      },
+      receivedAmount() {
+        return parseFloat(this.receivedInput) || 0.0;
+      },
+      changeUsd() {
+        return Math.max(this.receivedAmount - this.netTotalUsd, 0);
+      },
+      changeKhr() {
+        return Math.round(this.changeUsd * 4000);
+      }
+    },
+    watch: {
+      netTotalUsd(newTotal) {
+        // Automatically default the received input to match the total if empty or lower
+        if (this.receivedAmount === 0 || this.receivedAmount < newTotal) {
+          this.receivedInput = newTotal.toFixed(2);
+        }
+      }
+    },
+    methods: {
+      updateTime() {
+        const now = new Date();
+        this.timestamp = now.toLocaleString();
+      },
+      fetchProducts() {
+        let vm = this;
+        $.LoadingOverlay("show");
+        axios.get("{{ url_for('dashboard.api_list_products') }}")
+          .then(function (response) {
+            vm.product_list = response.data.products;
+            $.LoadingOverlay("hide");
+          })
+          .catch(function (error) {
+            console.log(error);
+            $.LoadingOverlay("hide");
+            Swal.fire('Error', 'Failed to retrieve products from database.', 'error');
+          });
+      },
+      productCardOnClick(item) {
+        if (item.stock <= 0) {
+          Swal.fire('Stock Alert', 'Product is currently out of stock.', 'warning');
+          return;
+        }
+
+        let dpl = this.selected_product_list.find(obj => obj.id === item.id);
+        if (dpl === undefined) {
+          this.selected_product_list.push({
+            id: item.id,
+            title: item.title,
+            price: item.price,
+            category: item.category,
+            image: item.image,
+            qty: 1
+          });
+        } else {
+          // Check stock limit
+          if (dpl.qty >= item.stock) {
+            Swal.fire('Stock Limit', 'Cannot exceed available stock level.', 'warning');
+            return;
+          }
+          dpl.qty++;
+        }
+      },
+      removeItem(index) {
+        const item = this.selected_product_list[index];
+        Swal.fire({
+          title: 'Remove Item?',
+          text: `Are you sure you want to remove "${item.title}" from the cart?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Yes, remove it!'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.selected_product_list.splice(index, 1);
+          }
+        });
+      },
+      modifyQty(index) {
+        const item = this.selected_product_list[index];
+        const product = this.product_list.find(p => p.id === item.id);
+        const maxStock = product ? product.stock : 999;
+
+        Swal.fire({
+          title: 'Modify Quantity',
+          text: `Enter new quantity for "${item.title}" (Max available: ${Math.round(maxStock)}):`,
+          input: 'number',
+          inputAttributes: {
+            min: 1,
+            max: maxStock,
+            step: 1
+          },
+          inputValue: item.qty,
+          showCancelButton: true,
+          confirmButtonText: 'Update',
+          confirmButtonColor: '#ffc107',
+          cancelButtonColor: '#6c757d',
+          inputValidator: (value) => {
+            if (!value || isNaN(value) || parseInt(value) <= 0) {
+              return 'Please enter a valid positive number!';
+            }
+            if (parseInt(value) > maxStock) {
+              return `Cannot exceed available stock level (${Math.round(maxStock)})!`;
+            }
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            item.qty = parseInt(result.value);
+          }
+        });
+      },
+      clearSearch() {
+        this.search_query = '';
+        this.filter_category = '';
+      },
+      numpadClick(key) {
+        if (key === 'C') {
+          this.receivedInput = '0';
+        } else if (key === '⌫') {
+          if (this.receivedInput.length > 1) {
+            this.receivedInput = this.receivedInput.slice(0, -1);
+          } else {
+            this.receivedInput = '0';
+          }
+        } else if (key === '.') {
+          if (!this.receivedInput.includes('.')) {
+            this.receivedInput += '.';
+          }
+        } else {
+          if (this.receivedInput === '0' || this.receivedInput === '0.00' || this.receivedInput === this.netTotalUsd.toFixed(2)) {
+            this.receivedInput = key;
+          } else {
+            this.receivedInput += key;
+          }
+        }
+      },
+      quickCash(val) {
+        // If current input matches net total or is 0, start clean, otherwise add
+        let base = 0;
+        if (this.receivedInput !== '0' && this.receivedInput !== this.netTotalUsd.toFixed(2)) {
+          base = parseFloat(this.receivedInput) || 0;
+        }
+        this.receivedInput = (base + val).toFixed(2);
+      },
+      cancelSale() {
+        if (this.selected_product_list.length === 0) return;
+        
+        Swal.fire({
+          title: 'Empty Cart?',
+          text: 'Are you sure you want to clear current items?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Clear Cart'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.clearCart();
+            Swal.fire('Cleared!', 'Cart details cleared.', 'success');
+          }
+        });
+      },
+      clearCart() {
+        this.selected_product_list = [];
+        this.discount_pct = 0;
+        this.receivedInput = this.netTotalUsd.toFixed(2);
+      },
+      payNow() {
+        if (!this.shop_id) {
+          Swal.fire('Validation Warning', 'Please select a shop location.', 'warning');
+          return;
+        }
+        if (!this.payment_method_id) {
+          Swal.fire('Validation Warning', 'Please select a payment method.', 'warning');
+          return;
+        }
+        if (this.selected_product_list.length === 0) {
+          Swal.fire('Validation Warning', 'Please add products to the cart.', 'warning');
+          return;
+        }
+        if (this.receivedAmount < this.netTotalUsd) {
+          Swal.fire('Validation Warning', 'Received amount is less than total price.', 'warning');
+          return;
+        }
+
+        let vm = this;
+        $.LoadingOverlay("show");
+
+        axios.post("{{ url_for('dashboard.api_create_sale') }}", {
+          shop_id: parseInt(this.shop_id),
+          payment_method_id: parseInt(this.payment_method_id),
+          discount_pct: parseInt(this.discount_pct) || 0,
+          discount_amount: parseFloat(this.discountAmount.toFixed(2)),
+          total: parseFloat(this.netTotalUsd.toFixed(2)),
+          paid_amount: parseFloat(this.receivedAmount),
+          items: this.selected_product_list.map(item => ({
+            product_id: item.id,
+            qty: parseInt(item.qty)
+          }))
+        })
+        .then(function (response) {
+          $.LoadingOverlay("hide");
+          if (response.data.success) {
+            Swal.fire({
+              title: 'Transaction Successful!',
+              html: `<strong>Change details:</strong><br>
+                     USD: $${vm.changeUsd.toFixed(2)}<br>
+                     KHR: ${vm.changeKhr.toLocaleString()} ៛`,
+              icon: 'success',
+              confirmButtonText: 'OK'
+            }).then(() => {
+              vm.printThermalReceipt();
+              vm.clearCart();
+              vm.fetchProducts(); // Refresh stock quantities after sales
+            });
+          }
+        })
+        .catch(function (error) {
+          $.LoadingOverlay("hide");
+          console.log(error);
+          Swal.fire('Error', 'Transaction failed: ' + (error.response?.data?.error || 'Server error'), 'error');
+        });
+      },
+      printThermalReceipt() {
+        const width = 350;
+        const height = 600;
+        const left = (window.screen.width - width) / 2;
+        const top = (window.screen.height - height) / 2;
+        const printWindow = window.open('', '_blank', `width=${width},height=${height},left=${left},top=${top}`);
+        
+        if (!printWindow) {
+          Swal.fire('Popup Blocked', 'Please allow popups to print receipts.', 'warning');
+          return;
+        }
+
+        const shopNameMap = {
+          '1': 'Main Branch',
+          '2': 'Downtown Shop',
+          '3': 'Campus Cafe'
+        };
+        const currentShopName = shopNameMap[this.shop_id] || 'POS Register';
+        
+        const paymentMethodMap = {
+          '1': 'Cash',
+          '2': 'ABA Pay',
+          '3': 'ABA KHQR',
+          '4': 'Wing'
+        };
+        const currentPaymentMethod = paymentMethodMap[this.payment_method_id] || 'Cash';
+
+        const receiptItemsHtml = this.selected_product_list.map((item, index) => `
+          <tr>
+            <td>${index + 1}. ${item.title}</td>
+            <td class="text-center">${item.qty}</td>
+            <td class="text-right">$${item.price.toFixed(2)}</td>
+            <td class="text-right">$${(item.qty * item.price).toFixed(2)}</td>
+          </tr>
+        `).join('');
+
+        const receiptHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>POS Receipt</title>
+  <style>
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    body {
+      width: 80mm;
+      margin: 0;
+      padding: 10px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      color: #000;
+      background-color: #fff;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .font-bold { font-weight: bold; }
+    .divider { border-top: 1px dashed #000; margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th { border-bottom: 1px dashed #000; padding: 4px 0; text-align: left; }
+    td { padding: 4px 0; vertical-align: top; }
+    .totals-table { width: 100%; margin-top: 5px; }
+    .totals-table td { padding: 2px 0; }
+  </style>
+</head>
+<body>
+  <h3 class="text-center" style="margin: 0 0 5px 0;">SALES RECEIPT</h3>
+  <div class="text-center font-bold">${currentShopName}</div>
+  <div class="text-center">Tel: 012-345-678</div>
+  <div class="divider"></div>
+  <div><strong>Date:</strong> ${new Date().toLocaleString()}</div>
+  <div><strong>Operator:</strong> ${this.operatorName}</div>
+  <div><strong>Payment:</strong> ${currentPaymentMethod}</div>
+  <div class="divider"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th class="text-center">Qty</th>
+        <th class="text-right">Price</th>
+        <th class="text-right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${receiptItemsHtml}
+    </tbody>
+  </table>
+  <div class="divider"></div>
+  <table class="totals-table">
+    ${this.discount_pct > 0 ? `
+    <tr>
+      <td>Subtotal:</td>
+      <td class="text-right">$${this.subtotalUsd.toFixed(2)}</td>
+    </tr>
+    <tr>
+      <td>Discount (${this.discount_pct}%):</td>
+      <td class="text-right">-$${this.discountAmount.toFixed(2)}</td>
+    </tr>
+    ` : ''}
+    <tr class="font-bold">
+      <td>NET TOTAL (USD):</td>
+      <td class="text-right">$${this.netTotalUsd.toFixed(2)}</td>
+    </tr>
+    <tr class="font-bold">
+      <td>NET TOTAL (KHR):</td>
+      <td class="text-right">${this.netTotalKhr.toLocaleString()} ៛</td>
+    </tr>
+    <tr class="divider-row"><td colspan="2"><div class="divider"></div></td></tr>
+    <tr>
+      <td>Cash Received:</td>
+      <td class="text-right">$${this.receivedAmount.toFixed(2)}</td>
+    </tr>
+    <tr class="font-bold">
+      <td>Change Due (USD):</td>
+      <td class="text-right">$${this.changeUsd.toFixed(2)}</td>
+    </tr>
+    <tr class="font-bold">
+      <td>Change Due (KHR):</td>
+      <td class="text-right">${this.changeKhr.toLocaleString()} ៛</td>
+    </tr>
+  </table>
+  <div class="divider"></div>
+  <h4 class="text-center" style="margin: 5px 0 0 0;">THANK YOU!</h4>
+  <div class="text-center">Please come again</div>
+
+</body>
+</html>
+        `;
+
+        printWindow.document.write(receiptHtml);
+        printWindow.document.close();
+      }
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>

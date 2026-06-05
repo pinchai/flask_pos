@@ -1,0 +1,109 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Sale Details | AdminLTE{% endblock %}
+{% block header %}Sale #{{ sale.id }} Invoice{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="invoice p-3 mb-3">
+      <!-- title row -->
+      <div class="row">
+        <div class="col-12 font-weight-bold mb-3">
+          <h4>
+            <i class="fas fa-file-invoice"></i> AdminLTE Shop Manager.
+            <small class="float-right font-weight-normal">Date: {{ sale.sale_date.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+          </h4>
+        </div>
+      </div>
+      <!-- info row -->
+      <div class="row invoice-info">
+        <div class="col-sm-4 invoice-col">
+          <strong>Shop Info</strong>
+          <address>
+            <strong>{{ sale.shop.name }}</strong><br>
+            Address: {{ sale.shop.address }}<br>
+            Logo: {{ sale.shop.logo or '-' }}
+          </address>
+        </div>
+        <div class="col-sm-4 invoice-col">
+          <strong>User Info</strong>
+          <address>
+            <strong>{{ sale.user.username }}</strong><br>
+            Type: {{ sale.user.type or '-' }}<br>
+            Status: {{ sale.user.status or '-' }}
+          </address>
+        </div>
+        <div class="col-sm-4 invoice-col">
+          <b>Payment details:</b><br>
+          <b>Payment Method:</b> {{ sale.payment_method.name }}<br>
+          <b>Discount %:</b> {{ sale.discount_pct }}%<br>
+          <b>Discount $:</b> ${{ sale.discount_amount }}
+        </div>
+      </div>
+
+      <!-- Table row -->
+      <div class="row mt-4">
+        <div class="col-12 table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in sale.items %}
+              <tr>
+                <td>{{ item.product.name }}</td>
+                <td>${{ item.price }}</td>
+                <td>{{ item.qty }}</td>
+                <td>${{ (item.price * item.qty) | round(2) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-6">
+        </div>
+        <div class="col-6">
+          <p class="lead font-weight-bold">Summary</p>
+          <div class="table-responsive">
+            <table class="table">
+              <tr>
+                <th style="width:50%">Gross Subtotal:</th>
+                <td>${{ (sale.total + sale.discount_amount) | round(2) }}</td>
+              </tr>
+              <tr>
+                <th>Discount:</th>
+                <td>${{ sale.discount_amount }} ({{ sale.discount_pct }}%)</td>
+              </tr>
+              <tr>
+                <th>Total:</th>
+                <td><strong>${{ sale.total }}</strong></td>
+              </tr>
+              <tr>
+                <th>Amount Paid:</th>
+                <td>${{ sale.paid_amount }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- this row will not appear when printing -->
+      <div class="row no-print">
+        <div class="col-12">
+          <a href="{{ url_for('dashboard.list_sales') }}" class="btn btn-default"><i class="fas fa-arrow-left"></i> Back to Sales</a>
+          <button onclick="window.print();" class="btn btn-default float-right"><i class="fas fa-print"></i> Print</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

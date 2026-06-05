@@ -1,0 +1,226 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard | AdminLTE{% endblock %}
+{% block header %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-info">
+      <div class="inner">
+        <h3>{{ user_count }}</h3>
+        <p>Total Users</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <a href="{{ url_for('dashboard.list_users') }}" class="small-box-footer">
+        More info <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-success">
+      <div class="inner">
+        <h3>{{ shop_count }}</h3>
+        <p>Total Shops</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-store"></i>
+      </div>
+      <a href="{{ url_for('dashboard.list_shops') }}" class="small-box-footer">
+        More info <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-warning text-white">
+      <div class="inner">
+        <h3 class="text-white">{{ product_count }}</h3>
+        <p class="text-white">Total Products</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-box"></i>
+      </div>
+      <a href="{{ url_for('dashboard.list_products') }}" class="small-box-footer text-white">
+        More info <i class="fas fa-arrow-circle-right text-white"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-danger">
+      <div class="inner">
+        <h3>{{ sale_count }}</h3>
+        <p>Total Sales</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-shopping-cart"></i>
+      </div>
+      <a href="{{ url_for('dashboard.list_sales') }}" class="small-box-footer">
+        More info <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card card-outline card-success shadow-sm">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-line mr-1 text-success"></i> Sales Revenue Trend</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="revenue_trend_chart" style="width: 100%; height: 300px;"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4">
+    <div class="card card-outline card-info shadow-sm">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-pie mr-1 text-info"></i> Product Category Share</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="category_share_chart" style="width: 100%; height: 300px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card card-outline card-warning shadow-sm">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-bar mr-1 text-warning"></i> Revenue by Shop Location</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="shop_revenue_chart" style="width: 100%; height: 300px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card card-outline card-primary shadow-sm">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-cogs mr-1 text-primary"></i> Quick Actions & Settings</h3>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Welcome to your AdminLTE dashboard! Easily administer data by selecting the resource categories in the sidebar navigation or utilizing the shortcuts below.</p>
+        <div class="row mt-4">
+          <div class="col-4">
+            <a href="{{ url_for('dashboard.list_categories') }}" class="btn btn-outline-primary btn-block py-2"><i class="fas fa-tags d-block mb-1 text-lg"></i> Categories</a>
+          </div>
+          <div class="col-4">
+            <a href="{{ url_for('dashboard.list_payment_methods') }}" class="btn btn-outline-secondary btn-block py-2"><i class="fas fa-credit-card d-block mb-1 text-lg"></i> Payments</a>
+          </div>
+          <div class="col-4">
+            <a href="{{ url_for('dashboard.create_sale') }}" class="btn btn-outline-success btn-block py-2"><i class="fas fa-plus d-block mb-1 text-lg"></i> New Sale</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Load Google Charts Loader API -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+  google.charts.load('current', {'packages':['corechart']});
+  google.charts.setOnLoadCallback(drawCharts);
+
+  function drawCharts() {
+    // 1. Revenue Trend Line Chart
+    var revenueData = google.visualization.arrayToDataTable([
+      ['Date', 'Revenue ($)'],
+      {% for item in revenue_chart %}
+        ['{{ item.date }}', {{ item.revenue }}],
+      {% endfor %}
+    ]);
+
+    var revenueOptions = {
+      curveType: 'function',
+      legend: { position: 'none' },
+      hAxis: { textStyle: { color: '#666', fontSize: 11 } },
+      vAxis: { 
+        title: 'Revenue ($)', 
+        minValue: 0,
+        textStyle: { color: '#666' },
+        gridlines: { color: '#f3f3f3' }
+      },
+      chartArea: { width: '85%', height: '80%', top: 15 },
+      colors: ['#28a745'],
+      lineWidth: 3,
+      areaOpacity: 0.15
+    };
+
+    var revenueChart = new google.visualization.AreaChart(document.getElementById('revenue_trend_chart'));
+    revenueChart.draw(revenueData, revenueOptions);
+
+    // 2. Category Share Pie Chart
+    var categoryData = google.visualization.arrayToDataTable([
+      ['Category', 'Products Count'],
+      {% for item in category_chart %}
+        ['{{ item.category }}', {{ item.count }}],
+      {% endfor %}
+    ]);
+
+    var categoryOptions = {
+      is3D: true,
+      legend: { position: 'right', textStyle: { fontSize: 11 } },
+      chartArea: { width: '95%', height: '90%', top: 10 },
+      pieSliceText: 'percentage'
+    };
+
+    var categoryChart = new google.visualization.PieChart(document.getElementById('category_share_chart'));
+    categoryChart.draw(categoryData, categoryOptions);
+
+    // 3. Sales by Shop Location Column Chart
+    var shopData = google.visualization.arrayToDataTable([
+      ['Shop Location', 'Revenue ($)', { role: 'style' }],
+      {% set colors = ['#17a2b8', '#28a745', '#ffc107', '#dc3545'] %}
+      {% for item in shop_chart %}
+        ['{{ item.shop }}', {{ item.total }}, '{{ colors[loop.index0 % 4] }}'],
+      {% endfor %}
+    ]);
+
+    var shopOptions = {
+      legend: { position: 'none' },
+      hAxis: { textStyle: { color: '#666', fontSize: 11 } },
+      vAxis: { 
+        title: 'Revenue ($)', 
+        minValue: 0,
+        gridlines: { color: '#f3f3f3' }
+      },
+      chartArea: { width: '85%', height: '80%', top: 15 }
+    };
+
+    var shopChart = new google.visualization.ColumnChart(document.getElementById('shop_revenue_chart'));
+    shopChart.draw(shopData, shopOptions);
+  }
+
+  // Handle responsiveness on window resize
+  $(window).resize(function(){
+    drawCharts();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit' if payment_method else 'Create' }} Payment Method | AdminLTE{% endblock %}
+{% block header %}{{ 'Edit' if payment_method else 'Create' }} Payment Method{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Payment Method Details</h3>
+      </div>
+      <form action="{{ url_for('dashboard.edit_payment_method', pm_id=payment_method.id) if payment_method else url_for('dashboard.create_payment_method') }}" method="post">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="name">Payment Method Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Enter payment method name" value="{{ payment_method.name if payment_method else '' }}" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="remark">Remark</label>
+                <input type="text" name="remark" id="remark" class="form-control" placeholder="Enter remark" value="{{ payment_method.remark if payment_method else '' }}">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="user_id">Created By (User) <span class="text-danger">*</span></label>
+                <select name="user_id" id="user_id" class="form-control" required>
+                  {% for u in users %}
+                    <option value="{{ u.id }}" {% if payment_method and payment_method.user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">Submit</button>
+          <a href="{{ url_for('dashboard.list_payment_methods') }}" class="btn btn-default">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

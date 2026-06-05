@@ -1,0 +1,70 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit' if shop else 'Create' }} Shop | AdminLTE{% endblock %}
+{% block header %}{{ 'Edit' if shop else 'Create' }} Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Shop Details</h3>
+      </div>
+      <form action="{{ url_for('dashboard.edit_shop', shop_id=shop.id) if shop else url_for('dashboard.create_shop') }}" method="post" enctype="multipart/form-data">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="name">Shop Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Enter shop name" value="{{ shop.name if shop else '' }}" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="address">Address <span class="text-danger">*</span></label>
+                <input type="text" name="address" id="address" class="form-control" placeholder="Enter shop address" value="{{ shop.address if shop else '' }}" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="logo">Shop Logo File</label>
+                <input type="file" name="logo" id="logo" class="form-control-file" accept="image/*">
+                {% if shop and shop.logo %}
+                  <div class="mt-2">
+                    <small class="text-muted text-xs">Current Logo:</small><br>
+                    <img src="{{ shop.logo }}" alt="shop logo" style="max-height: 80px;" class="img-thumbnail">
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="user_id">Owner (User) <span class="text-danger">*</span></label>
+                <select name="user_id" id="user_id" class="form-control" required>
+                  {% for u in users %}
+                    <option value="{{ u.id }}" {% if shop and shop.user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="description">Description</label>
+                <textarea name="description" id="description" class="form-control" placeholder="Enter shop description" rows="3">{{ shop.description if shop else '' }}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">Submit</button>
+          <a href="{{ url_for('dashboard.list_shops') }}" class="btn btn-default">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
