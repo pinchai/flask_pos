@@ -100,9 +100,10 @@ def seed_data():
     admin_products = []
     for p in admin_products_data:
         cat = admin_categories[p["cat_name"]]
+        clean_name = p["name"].lower().replace(" ", "_")
         prod = models.Product(
             name=p["name"], category_id=cat.id, cost=p["cost"], price=p["price"],
-            stock=p["stock"], image=f"https://placehold.co/170x170?text={p['name']}",
+            stock=p["stock"], image=f"/static/uploads/{clean_name}.png",
             remark="Best seller", user_id=admin_user.id
         )
         db.session.add(prod)
@@ -116,9 +117,10 @@ def seed_data():
     student_products = []
     for p in student_products_data:
         cat = student_categories[p["cat_name"]]
+        clean_name = p["name"].lower().replace(" ", "_")
         prod = models.Product(
             name=p["name"], category_id=cat.id, cost=p["cost"], price=p["price"],
-            stock=p["stock"], image=f"https://placehold.co/170x170?text={p['name']}",
+            stock=p["stock"], image=f"/static/uploads/{clean_name}.png",
             remark="Student essentials", user_id=student_user.id
         )
         db.session.add(prod)

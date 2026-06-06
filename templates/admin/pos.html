@@ -152,7 +152,7 @@
     /* Product Grid layout */
     .product-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      grid-template-columns: repeat(6, 1fr);
       grid-gap: 12px;
       padding-bottom: 40px;
     }
@@ -161,18 +161,24 @@
       background-color: #ffffff;
       border: 1px solid #dee2e6;
       border-radius: 6px;
-      padding: 10px;
-      text-align: center;
       cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
       position: relative;
       user-select: none;
-      color: #212529;
+      height: 160px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+      color: #ffffff;
     }
 
     .product-tile:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       border-color: #ffc107;
     }
 
@@ -182,30 +188,29 @@
       pointer-events: none;
     }
 
-    .product-tile-img {
-      height: 60px;
-      object-fit: contain;
-      margin-bottom: 8px;
-      border-radius: 4px;
-      background-color: #fff;
-      padding: 4px;
+    .product-tile-info {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px 6px;
+      width: 100%;
+      text-align: center;
     }
 
     .product-tile-title {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
-      height: 36px;
+      height: 34px;
       overflow: hidden;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
-      line-height: 1.1rem;
-      margin-bottom: 4px;
+      line-height: 1.05rem;
+      margin-bottom: 2px;
+      color: #ffffff;
     }
 
     .product-tile-price {
-      color: #28a745;
-      font-size: 0.95rem;
+      color: #ffc107;
+      font-size: 0.9rem;
       font-weight: 700;
     }
 
@@ -436,6 +441,7 @@
           :key="index"
           class="product-tile"
           :class="{ 'out-of-stock': item.stock <= 0 }"
+          :style="{ backgroundImage: 'url(' + item.image + ')' }"
           @click="productCardOnClick(item)"
         >
           <!-- Stock status -->
@@ -446,9 +452,10 @@
             [[ item.stock > 0 ? 'Stock: ' + Math.round(item.stock) : 'Out of stock' ]]
           </span>
           
-          <img :src="item.image" class="product-tile-img" alt="product icon">
-          <div class="product-tile-title" :title="item.title">[[ item.title ]]</div>
-          <div class="product-tile-price">$[[ item.price.toFixed(2) ]]</div>
+          <div class="product-tile-info">
+            <div class="product-tile-title" :title="item.title">[[ item.title ]]</div>
+            <div class="product-tile-price">$[[ item.price.toFixed(2) ]]</div>
+          </div>
         </div>
 
         <div v-if="filteredProducts.length === 0" class="col-12 text-center py-5">
