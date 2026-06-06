@@ -41,12 +41,9 @@
             </div>
             <div class="col-md-6">
               <div class="form-group">
-                <label for="user_id">Owner (User) <span class="text-danger">*</span></label>
-                <select name="user_id" id="user_id" class="form-control" required>
-                  {% for u in users %}
-                    <option value="{{ u.id }}" {% if shop and shop.user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
-                  {% endfor %}
-                </select>
+                <label>Owner (User)</label>
+                <input type="text" class="form-control bg-light" value="{{ current_user.username }}" readonly>
+                <input type="hidden" name="user_id" value="{{ current_user.id }}">
               </div>
             </div>
           </div>

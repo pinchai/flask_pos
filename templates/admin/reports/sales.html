@@ -4,31 +4,67 @@
 {% block header %}Sales Performance Report{% endblock %}
 
 {% block content %}
-<!-- Date-Time Filter Form Card -->
+<!-- Filter Form Card -->
 <div class="row">
   <div class="col-md-12">
     <div class="card card-default card-outline card-primary shadow-sm">
       <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-filter mr-1 text-primary"></i> Filter Report by Date-Time Range</h3>
+        <h3 class="card-title"><i class="fas fa-filter mr-1 text-primary"></i> Filter Report</h3>
       </div>
       <form action="{{ url_for('dashboard.sales_report') }}" method="get">
         <div class="card-body">
           <div class="row">
-            <div class="col-md-5">
+            <div class="col-md-6">
               <div class="form-group">
                 <label for="from_date">From Date-Time</label>
                 <input type="datetime-local" name="from_date" id="from_date" class="form-control" value="{{ from_date }}">
               </div>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-6">
               <div class="form-group">
                 <label for="to_date">To Date-Time</label>
                 <input type="datetime-local" name="to_date" id="to_date" class="form-control" value="{{ to_date }}">
               </div>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-              <div class="form-group w-100">
-                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search mr-1"></i> Filter</button>
+          </div>
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="branch_id">Branch</label>
+                <select name="branch_id" id="branch_id" class="form-control">
+                  <option value="">-- All Branches --</option>
+                  {% for s in shops %}
+                    <option value="{{ s.id }}" {% if s.id == branch_id %}selected{% endif %}>{{ s.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="category_id">Category</label>
+                <select name="category_id" id="category_id" class="form-control">
+                  <option value="">-- All Categories --</option>
+                  {% for c in categories %}
+                    <option value="{{ c.id }}" {% if c.id == category_id %}selected{% endif %}>{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="product_id">Product</label>
+                <select name="product_id" id="product_id" class="form-control">
+                  <option value="">-- All Products --</option>
+                  {% for p in products %}
+                    <option value="{{ p.id }}" {% if p.id == product_id %}selected{% endif %}>{{ p.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <div class="form-group w-100 d-flex" style="gap: 10px;">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-search mr-1"></i> Filter</button>
+                <a href="{{ url_for('dashboard.export_sales_report', from_date=from_date, to_date=to_date, branch_id=branch_id, category_id=category_id, product_id=product_id) }}" class="btn btn-outline-success"><i class="fas fa-file-excel mr-1"></i> Export Excel</a>
               </div>
             </div>
           </div>
@@ -187,7 +223,7 @@
       <div class="card-footer clearfix">
         <ul class="pagination pagination-sm m-0 float-right">
           {% if pagination.has_prev %}
-            <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=pagination.prev_num, from_date=from_date, to_date=to_date) }}">&laquo;</a></li>
+            <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=pagination.prev_num, from_date=from_date, to_date=to_date, branch_id=branch_id, category_id=category_id, product_id=product_id) }}">&laquo;</a></li>
           {% else %}
             <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
           {% endif %}
@@ -197,7 +233,7 @@
               {% if p == pagination.page %}
                 <li class="page-item active"><span class="page-link">{{ p }}</span></li>
               {% else %}
-                <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=p, from_date=from_date, to_date=to_date) }}">{{ p }}</a></li>
+                <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=p, from_date=from_date, to_date=to_date, branch_id=branch_id, category_id=category_id, product_id=product_id) }}">{{ p }}</a></li>
               {% endif %}
             {% else %}
               <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -205,7 +241,7 @@
           {% endfor %}
 
           {% if pagination.has_next %}
-            <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=pagination.next_num, from_date=from_date, to_date=to_date) }}">&raquo;</a></li>
+            <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=pagination.next_num, from_date=from_date, to_date=to_date, branch_id=branch_id, category_id=category_id, product_id=product_id) }}">&raquo;</a></li>
           {% else %}
             <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
           {% endif %}

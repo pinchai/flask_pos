@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="row">
+  {% if current_user.type == 'admin' %}
   <div class="col-lg-3 col-6">
     <div class="small-box bg-info">
       <div class="inner">
@@ -19,8 +20,9 @@
       </a>
     </div>
   </div>
+  {% endif %}
 
-  <div class="col-lg-3 col-6">
+  <div class="{% if current_user.type == 'admin' %}col-lg-3{% else %}col-lg-4{% endif %} col-6">
     <div class="small-box bg-success">
       <div class="inner">
         <h3>{{ shop_count }}</h3>
@@ -35,7 +37,7 @@
     </div>
   </div>
 
-  <div class="col-lg-3 col-6">
+  <div class="{% if current_user.type == 'admin' %}col-lg-3{% else %}col-lg-4{% endif %} col-6">
     <div class="small-box bg-warning text-white">
       <div class="inner">
         <h3 class="text-white">{{ product_count }}</h3>
@@ -50,7 +52,7 @@
     </div>
   </div>
 
-  <div class="col-lg-3 col-6">
+  <div class="{% if current_user.type == 'admin' %}col-lg-3{% else %}col-lg-4{% endif %} col-12">
     <div class="small-box bg-danger">
       <div class="inner">
         <h3>{{ sale_count }}</h3>

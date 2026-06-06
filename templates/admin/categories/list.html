@@ -15,6 +15,16 @@
     <div class="card card-outline card-primary">
       <div class="card-header">
         <h3 class="card-title">Product Categories</h3>
+        <div class="card-tools">
+          <form action="{{ url_for(request.endpoint) }}" method="get" class="input-group input-group-sm" style="width: 250px;">
+            <input type="text" name="search" class="form-control float-right" placeholder="Search..." value="{{ search or '' }}">
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-default">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
       <div class="card-body table-responsive p-0">
         <table class="table table-hover text-nowrap">
@@ -52,7 +62,7 @@
       <div class="card-footer clearfix">
         <ul class="pagination pagination-sm m-0 float-right">
           {% if pagination.has_prev %}
-            <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=pagination.prev_num) }}">&laquo;</a></li>
+            <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=pagination.prev_num, search=search) }}">&laquo;</a></li>
           {% else %}
             <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
           {% endif %}
@@ -62,7 +72,7 @@
               {% if p == pagination.page %}
                 <li class="page-item active"><span class="page-link">{{ p }}</span></li>
               {% else %}
-                <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=p) }}">{{ p }}</a></li>
+                <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=p, search=search) }}">{{ p }}</a></li>
               {% endif %}
             {% else %}
               <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -70,7 +80,7 @@
           {% endfor %}
 
           {% if pagination.has_next %}
-            <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=pagination.next_num) }}">&raquo;</a></li>
+            <li class="page-item"><a class="page-link" href="{{ url_for(request.endpoint, page=pagination.next_num, search=search) }}">&raquo;</a></li>
           {% else %}
             <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
           {% endif %}

@@ -62,12 +62,14 @@
             </a>
           </li>
           <li class="nav-header">CRUD OPERATORS</li>
+          {% if current_user.type == 'admin' %}
           <li class="nav-item">
             <a href="{{ url_for('dashboard.list_users') }}" class="nav-link {% if request.endpoint in ['dashboard.list_users', 'dashboard.create_user', 'dashboard.edit_user'] %}active{% endif %}">
               <i class="nav-icon fas fa-users"></i>
               <p>Users</p>
             </a>
           </li>
+          {% endif %}
           <li class="nav-item">
             <a href="{{ url_for('dashboard.list_shops') }}" class="nav-link {% if request.endpoint in ['dashboard.list_shops', 'dashboard.create_shop', 'dashboard.edit_shop'] %}active{% endif %}">
               <i class="nav-icon fas fa-store"></i>
@@ -102,6 +104,12 @@
             <a href="{{ url_for('dashboard.sales_report') }}" class="nav-link {% if request.endpoint == 'dashboard.sales_report' %}active{% endif %}">
               <i class="nav-icon fas fa-chart-line"></i>
               <p>Sales Report</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('dashboard.income_report') }}" class="nav-link {% if request.endpoint == 'dashboard.income_report' %}active{% endif %}">
+              <i class="nav-icon fas fa-dollar-sign"></i>
+              <p>Income Report</p>
             </a>
           </li>
         </ul>
