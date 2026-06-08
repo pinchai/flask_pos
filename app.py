@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from blueprints.api import api_bp
 from blueprints.dashboard import dashboard_bp
-from extensions import db, migrate, login_manager, jwt
+from extensions import db, migrate, login_manager, jwt, limiter
 from config import Config
 from flask_dotenv import DotEnv
 import models  # import models to register with SQL Alchemy
@@ -27,6 +27,7 @@ db.init_app(app)
 migrate.init_app(app, db)
 login_manager.init_app(app)
 jwt.init_app(app)
+limiter.init_app(app)
 login_manager.login_view = 'dashboard.login'
 login_manager.login_message_category = 'warning'
 
