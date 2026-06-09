@@ -50,7 +50,7 @@ def test_all_json_details():
         assert resp.json.get('name') == 'Updated Category JSON'
         print("SUCCESS: Category updated.")
 
-    # 3. Test Product JSON Detail
+    # 3. Test Product Detail & Create via Form-Data
     if prod_id:
         print(f"\nRetrieving Product ID {prod_id} details...")
         resp = client.post('/api/products/detail', json={'product_id': prod_id}, headers=headers)
@@ -58,11 +58,42 @@ def test_all_json_details():
         assert resp.json.get('id') == prod_id
         print("SUCCESS: Product details retrieved.")
 
-        print("Updating Product via JSON...")
-        resp = client.put('/api/products/detail', json={'product_id': prod_id, 'name': 'Updated Prod JSON', 'category_id': cat_id, 'price': 9.99}, headers=headers)
-        assert resp.status_code == 200, "Product update failed"
-        assert resp.json.get('name') == 'Updated Prod JSON'
+        print("Updating Product via Form-Data...")
+        import io
+        resp = client.put('/api/products/detail', data={
+            'product_id': prod_id,
+            'name': 'Updated Prod Form',
+            'category_id': cat_id,
+            'price': 9.99
+        }, headers=headers, content_type='multipart/form-data')
+        assert resp.status_code == 200, f"Product update failed: {resp.status_code}"
+        assert resp.json.get('name') == 'Updated Prod Form'
         print("SUCCESS: Product updated.")
+
+        # Test POST /api/products/ (create product) via Form-Data with a dummy file upload
+        print("Creating Product via Form-Data (with dummy image)...")
+        image_data = (io.BytesIO(b"test image content"), "api_test_product.png")
+        resp_create = client.post('/api/products/', data={
+            'name': 'API Form Product',
+            'category_id': cat_id,
+            'cost': 4.50,
+            'price': 12.00,
+            'stock': 15.0,
+            'remark': 'Created via API Form',
+            'image': image_data
+        }, headers=headers, content_type='multipart/form-data')
+        assert resp_create.status_code == 201, f"Product creation failed with status: {resp_create.status_code}"
+        created_prod_id = resp_create.json.get('id')
+        assert created_prod_id is not None
+        assert resp_create.json.get('name') == 'API Form Product'
+        assert resp_create.json.get('image').startswith('/static/uploads/')
+        print(f"SUCCESS: Product created via form-data (ID: {created_prod_id}, Image: {resp_create.json.get('image')}).")
+
+        # Delete the created product to clean up
+        print("Cleaning up created product...")
+        resp_del = client.delete('/api/products/detail', json={'product_id': created_prod_id}, headers=headers)
+        assert resp_del.status_code == 200, "Created product delete failed"
+        print("SUCCESS: Created product deleted.")
 
     # 4. Test Payment Method JSON Detail
     if pm_id:

@@ -1,7 +1,7 @@
 import os
 import time
 from functools import wraps
-from flask import request
+from flask import request, current_app
 from flask_jwt_extended import (
     create_access_token,
     jwt_required,
@@ -9,6 +9,8 @@ from flask_jwt_extended import (
     current_user
 )
 from flask_restx import Resource, fields, Namespace
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
 from extensions import db, jwt
 from models import User, Shop, Category, Product, PaymentMethod, Sale, SaleItem
 from . import api
@@ -100,6 +102,25 @@ product_id_expect_model = api.model('ProductIdExpect', {
 product_update_model = api.clone('ProductUpdate', product_model, {
     'product_id': fields.Integer(required=True, description='Product ID')
 })
+
+product_parser = ns_products.parser()
+product_parser.add_argument('name', type=str, location='form', required=True, help='Product name')
+product_parser.add_argument('category_id', type=int, location='form', required=True, help='Category ID')
+product_parser.add_argument('cost', type=float, location='form', help='Product cost price')
+product_parser.add_argument('price', type=float, location='form', required=True, help='Product retail price')
+product_parser.add_argument('stock', type=float, location='form', help='Current inventory stock')
+product_parser.add_argument('image', type=FileStorage, location='files', help='Product image file')
+product_parser.add_argument('remark', type=str, location='form', help='Product remark')
+
+product_update_parser = ns_products.parser()
+product_update_parser.add_argument('product_id', type=int, location='form', required=True, help='Product ID')
+product_update_parser.add_argument('name', type=str, location='form', help='Product name')
+product_update_parser.add_argument('category_id', type=int, location='form', help='Category ID')
+product_update_parser.add_argument('cost', type=float, location='form', help='Product cost price')
+product_update_parser.add_argument('price', type=float, location='form', help='Product retail price')
+product_update_parser.add_argument('stock', type=float, location='form', help='Current inventory stock')
+product_update_parser.add_argument('image', type=FileStorage, location='files', help='Product image file')
+product_update_parser.add_argument('remark', type=str, location='form', help='Product remark')
 
 payment_method_model = api.model('PaymentMethod', {
     'name': fields.String(required=True, description='Payment Method name'),
@@ -452,22 +473,32 @@ class ApiProductList(Resource):
         return Product.query.filter_by(user_id=current_user.id).all()
 
     @jwt_required()
-    @ns_products.expect(product_model)
+    @ns_products.expect(product_parser)
     @ns_products.marshal_with(product_response_model, code=201)
     def post(self):
         """Create a new product"""
-        data = request.json
-        cat_id = data.get('category_id')
+        args = product_parser.parse_args()
+        cat_id = args.get('category_id')
         Category.query.filter_by(id=cat_id, user_id=current_user.id).first_or_404(description="Invalid category ID")
         
+        image_file = args.get('image')
+        image_path = None
+        if image_file and image_file.filename != '':
+            filename = secure_filename(image_file.filename)
+            filename = f"{int(time.time())}_{filename}"
+            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            image_file.save(os.path.join(upload_dir, filename))
+            image_path = f"/static/uploads/{filename}"
+
         new_prod = Product(
-            name=data.get('name'),
+            name=args.get('name'),
             category_id=cat_id,
-            cost=data.get('cost', 0.0),
-            price=data.get('price', 0.0),
-            stock=data.get('stock', 0.0),
-            image=data.get('image'),
-            remark=data.get('remark'),
+            cost=args.get('cost') or 0.0,
+            price=args.get('price') or 0.0,
+            stock=args.get('stock') or 0.0,
+            image=image_path,
+            remark=args.get('remark'),
             user_id=current_user.id
         )
         db.session.add(new_prod)
@@ -489,25 +520,39 @@ class ApiProductDetail(Resource):
         return prod
 
     @jwt_required()
-    @ns_products.expect(product_update_model)
+    @ns_products.expect(product_update_parser)
     @ns_products.marshal_with(product_response_model)
     def put(self):
         """Update a product"""
-        data = request.json
-        product_id = data.get('product_id')
+        args = product_update_parser.parse_args()
+        product_id = args.get('product_id')
         prod = Product.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
         
-        if 'category_id' in data:
-            Category.query.filter_by(id=data['category_id'], user_id=current_user.id).first_or_404(description="Invalid category ID")
-            prod.category_id = data['category_id']
+        cat_id = args.get('category_id')
+        if cat_id is not None:
+            Category.query.filter_by(id=cat_id, user_id=current_user.id).first_or_404(description="Invalid category ID")
+            prod.category_id = cat_id
             
-        prod.name = data.get('name', prod.name)
-        prod.cost = data.get('cost', prod.cost)
-        prod.price = data.get('price', prod.price)
-        prod.stock = data.get('stock', prod.stock)
-        prod.image = data.get('image', prod.image)
-        prod.remark = data.get('remark', prod.remark)
-        
+        if args.get('name') is not None:
+            prod.name = args.get('name')
+        if args.get('cost') is not None:
+            prod.cost = args.get('cost')
+        if args.get('price') is not None:
+            prod.price = args.get('price')
+        if args.get('stock') is not None:
+            prod.stock = args.get('stock')
+        if args.get('remark') is not None:
+            prod.remark = args.get('remark')
+            
+        image_file = args.get('image')
+        if image_file and image_file.filename != '':
+            filename = secure_filename(image_file.filename)
+            filename = f"{int(time.time())}_{filename}"
+            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            image_file.save(os.path.join(upload_dir, filename))
+            prod.image = f"/static/uploads/{filename}"
+            
         db.session.commit()
         return prod
 

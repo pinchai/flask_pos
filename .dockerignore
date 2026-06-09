@@ -1,0 +1,12 @@
+.git
+.idea
+.venv
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.db
+instance/*.db
+uploads/
+static/uploads/
+scratch/__pycache__/
