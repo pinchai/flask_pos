@@ -10,3 +10,8 @@ instance/*.db
 uploads/
 static/uploads/
 scratch/__pycache__/
+Dockerfile
+docker-compose.yml
+.dockerignore
+.pytest_cache/
+*.log
