@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flask-restx-app:latest
+    container_name: flask_restx_web
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - SECRET_KEY=${SECRET_KEY:-a-very-secret-key-12345}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-another-super-secret-key-67890}
+      - SQLALCHEMY_DATABASE_URI=sqlite:///instance/app.db
+      - SQLALCHEMY_TRACK_MODIFICATIONS=False
+    volumes:
+      # Mount the local application code for live reload during development
+      - .:/app
+      # Exclude .venv and __pycache__ from host shadowing the container's environment
+      - /app/.venv
+      - /app/__pycache__
+      # Persist SQLite database and file uploads using named volumes or local folders
+      - flask_db_data:/app/instance
+      - flask_uploads:/app/uploads
+    # In development mode, run Flask development server with auto-reload.
+    # For production, comment this out to use the Dockerfile's default Gunicorn command.
+    command: flask run --host=0.0.0.0 --port=5000
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  flask_db_data:
+  flask_uploads:
