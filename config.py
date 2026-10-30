@@ -1,17 +1,34 @@
 import os
+import sys
 from dotenv import load_dotenv
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-# Explicitly load .env file
-load_dotenv(os.path.join(basedir, '.env'))
+# Detect runtime environment (PyInstaller frozen executable vs standard Python)
+if getattr(sys, 'frozen', False):
+    basedir = os.path.dirname(sys.executable)
+    bundle_dir = getattr(sys, '_MEIPASS', basedir)
+else:
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    bundle_dir = basedir
+
+# Priority 1: Load .env from directory containing the executable
+env_file = os.path.join(basedir, '.env')
+if os.path.exists(env_file):
+    load_dotenv(env_file)
+else:
+    # Priority 2: Fallback to bundled or local root
+    load_dotenv(os.path.join(bundle_dir, '.env'))
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-very-secret-key-12345'
     PROPAGATE_EXCEPTIONS = True
-    RESTX_MASK_SWAGGER = False
-    RESTX_MASK_HEADER = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DATABASE_URL')
+    
+    # SQLite database defaults to app.db in the SAME directory as the .exe
+    default_db_file = os.path.join(basedir, 'app.db').replace('\\', '/')
+    SQLALCHEMY_DATABASE_URI = (
+        os.environ.get('SQLALCHEMY_DATABASE_URI') or
+        os.environ.get('DATABASE_URL') or
+        f'sqlite:///{default_db_file}'
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     BOT_TOKEN = os.environ.get('BOT_TOKEN')
     CHAT_ID = os.environ.get('CHAT_ID')

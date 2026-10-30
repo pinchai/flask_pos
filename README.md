@@ -1,94 +1,198 @@
-# flask_pos
+# Flask POS System
 
-## Installation
+A comprehensive, desktop-ready Point of Sale (POS) and inventory management web application built with Python, Flask, SQLite, and AdminLTE.
 
-1. Create and activate a virtual environment:
+---
 
-```bash
+## 🌟 Key Features
+
+- **Interactive POS Screen**: Fast product search, responsive cart, quantity adjustments, tax & discount calculation, and multi-payment checkout.
+- **Inventory & Store Management**: Complete management of Shops, Categories, Products, and Payment Methods.
+- **Analytics & Reports**:
+  - Daily & monthly sales reports with PDF invoice downloads.
+  - Comprehensive income & profit margin reports with Excel (`.xlsx`) export.
+- **Role-Based Authentication**: Secure session-based authentication with `admin` and `student` roles.
+- **Automated Database Backups to Telegram**:
+  - Safely snapshots the live SQLite database without locking conflicts using SQLite's online backup API.
+  - Sends the backup file directly to a Telegram chat using bot credentials from `.env`.
+  - Available via web UI, Flask CLI, or standalone Python script.
+- **Standalone Windows Executable (`.exe`)**:
+  - Compiles into a single portable `.exe` using PyInstaller.
+  - Automatically keeps `app.db`, `.env`, and `uploads/` in the **exact same directory as the `.exe`**.
+  - Powered by Waitress WSGI server with automatic browser launching on startup.
+
+---
+
+## 📋 Default Credentials
+
+When first run without an existing database, the system automatically initializes all tables and creates a default administrator account:
+
+- **Username:** `admin`
+- **Password:** `admin`
+
+---
+
+## 🚀 Quick Start (Development)
+
+### 1. Clone & Set Up Virtual Environment
+
+```powershell
+# Windows
+python -m venv .venv
+.\.venv\Scripts\activate
+
+# Linux / macOS
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-2. Copy the example environment file:
+### 2. Configure Environment Variables
 
-```bash
+Copy the example `.env` file:
+
+```powershell
 cp .env.example .env
 ```
 
-3. Install dependencies:
+Edit `.env` to configure your settings and Telegram credentials:
 
-```bash
+```env
+SECRET_KEY=your-secret-key-here
+SQLALCHEMY_DATABASE_URI=sqlite:///app.db
+SQLALCHEMY_TRACK_MODIFICATIONS=False
+
+# Telegram Backup Credentials
+BOT_TOKEN=your_telegram_bot_token_here
+CHAT_ID=your_telegram_chat_id_here
+```
+
+### 3. Install Dependencies
+
+```powershell
 pip install -r requirements.txt
 ```
 
-4. Apply database migrations:
+### 4. Database Setup
 
-```bash
+```powershell
+# Apply migrations
 flask --app app db upgrade
-```
 
-5. Seed sample data:
-
-```bash
+# (Optional) Seed mockup catalog data
 flask --app app seed-db
 ```
 
-6. Run the app:
+### 5. Run the Application
 
-```bash
+```powershell
+# Development mode with auto-reload:
 flask --app app run
+
+# Or run with the production desktop server (Waitress):
+python app.py
 ```
 
-Open the dashboard at `http://127.0.0.1:5000` and the API docs at `http://127.0.0.1:5000/api/docs`.
+Open your browser at **`http://127.0.0.1:5000`**.
 
-## API Documentation
+---
 
-The REST API is mounted under `/api` and includes interactive Swagger documentation.
+## 📦 Database Backup to Telegram
 
-- Swagger UI: `http://127.0.0.1:5000/api/docs`
-- OpenAPI JSON: `http://127.0.0.1:5000/api/swagger.json`
+You can back up the database and send the file to Telegram through any of the following methods:
 
-### Authentication
+### Method 1: Web Dashboard (Admin)
+1. Log in to the dashboard as an `admin`.
+2. In the left sidebar under **SYSTEM & TOOLS**, click **Backup to Telegram**.
+3. Confirm the prompt to immediately dispatch the backup.
 
-Most API endpoints require a JWT access token.
-
-1. Log in with an approved user:
-
-```bash
-curl -X POST http://127.0.0.1:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "1234556789"}'
+### Method 2: Flask CLI Command
+```powershell
+flask --app app backup-db
 ```
 
-2. Copy the returned `access_token`.
+### Method 3: Standalone Python Script
+```powershell
+# Send standard .db snapshot
+python backup.py
 
-3. Send the token in protected requests:
-
-```bash
-Authorization: Bearer <access_token>
+# Send compressed .zip archive
+python backup.py --compress
 ```
 
-In Swagger UI, click `Authorize` and enter the token using the same format:
+---
+
+## 🛠️ Building the Windows Executable (`.exe`)
+
+You can compile the entire project into a single, portable Windows desktop executable with any of these commands:
+
+### Option 1: Flask CLI (Recommended)
+```powershell
+flask build-exe
+```
+
+### Option 2: Windows Batch File (Command Prompt or Double-Click)
+```cmd
+build.bat
+```
+
+### Option 3: PowerShell Script
+```powershell
+.\build.ps1
+```
+
+### Option 4: Direct PyInstaller
+```powershell
+pyinstaller --noconfirm flask_pos.spec
+```
+
+The compiled binary will be placed at:
+```
+dist/flask_pos.exe
+```
+
+---
+
+## 📂 Portable Executable Layout
+
+When deploying `dist/flask_pos.exe` to another computer, all persistent files remain alongside the `.exe`:
 
 ```text
-Bearer <access_token>
+MyPOS/
+├── flask_pos.exe       # Standalone executable
+├── app.db              # SQLite database (auto-created in same folder)
+├── .env                # (Optional) Bot token & custom configuration
+├── uploads/            # (Auto-created) Product & shop logos
+└── backups/            # (Auto-created) Local database backups
 ```
 
-### Main API Groups
+---
 
-- `POST /api/auth/login` authenticates an approved user and returns a JWT.
-- `POST /api/auth/register` creates a pending student user.
-- `/api/shops/` lists and creates shops for the logged-in user.
-- `/api/shops/detail` gets, updates, or deletes one shop by `shop_id`.
-- `/api/categories/` lists and creates categories for the logged-in user.
-- `/api/categories/detail` gets, updates, or deletes one category by `category_id`.
-- `/api/products/` lists and creates products for the logged-in user.
-- `/api/products/detail` gets, updates, or deletes one product by `product_id`.
-- `/api/payment-methods/` lists and creates payment methods for the logged-in user.
-- `/api/payment-methods/detail` gets, updates, or deletes one payment method by `pm_id`.
-- `/api/sales/` lists sales or creates a new sale transaction.
-- `/api/sales/detail` returns invoice-style details for one sale by `sale_id`.
+## 📁 Project Structure
 
-### Notes
+```text
+flask_pos/
+├── app.py                      # Application factory, routes, and server entrypoint
+├── backup.py                   # Telegram database backup module & CLI
+├── build.bat                   # 1-click Windows build script
+├── build.ps1                   # PowerShell build script
+├── config.py                   # Configuration & runtime path resolution
+├── extensions.py               # SQLAlchemy, LoginManager, Limiter extensions
+├── flask_pos.spec              # PyInstaller build specification
+├── models.py                   # Database models (User, Shop, Product, Sale, etc.)
+├── seed.py                     # Initial seed data script
+├── requirements.txt            # Python dependencies
+├── .env.example                # Example environment configuration
+├── blueprints/
+│   └── dashboard/              # Web dashboard & POS interface routes
+├── templates/
+│   └── admin/                  # AdminLTE Jinja2 templates (POS, reports, CRUD)
+├── static/                     # CSS, JavaScript, and image assets
+└── dist/
+    └── flask_pos.exe           # Compiled desktop executable
+```
 
-API data is scoped to the authenticated user. A user can only access shops, categories, products, payment methods, and sales that belong to their own account.
+---
+
+## 📄 License
+
+This project is open-source and available under the MIT License.

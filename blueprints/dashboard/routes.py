@@ -149,7 +149,7 @@ def create_user():
         if profile_file and profile_file.filename != '':
             filename = secure_filename(profile_file.filename)
             filename = f"{int(time.time())}_{filename}"
-            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            upload_dir = current_app.config.get('UPLOAD_FOLDER') or os.path.join(current_app.static_folder, 'uploads')
             os.makedirs(upload_dir, exist_ok=True)
             profile_file.save(os.path.join(upload_dir, filename))
             profile_path = f"/static/uploads/{filename}"
@@ -186,7 +186,7 @@ def edit_user(user_id):
         if profile_file and profile_file.filename != '':
             filename = secure_filename(profile_file.filename)
             filename = f"{int(time.time())}_{filename}"
-            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            upload_dir = current_app.config.get('UPLOAD_FOLDER') or os.path.join(current_app.static_folder, 'uploads')
             os.makedirs(upload_dir, exist_ok=True)
             profile_file.save(os.path.join(upload_dir, filename))
             user.profile = f"/static/uploads/{filename}"
@@ -249,7 +249,7 @@ def create_shop():
         if logo_file and logo_file.filename != '':
             filename = secure_filename(logo_file.filename)
             filename = f"{int(time.time())}_{filename}"
-            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            upload_dir = current_app.config.get('UPLOAD_FOLDER') or os.path.join(current_app.static_folder, 'uploads')
             os.makedirs(upload_dir, exist_ok=True)
             logo_file.save(os.path.join(upload_dir, filename))
             logo_path = f"/static/uploads/{filename}"
@@ -279,7 +279,7 @@ def edit_shop(shop_id):
         if logo_file and logo_file.filename != '':
             filename = secure_filename(logo_file.filename)
             filename = f"{int(time.time())}_{filename}"
-            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            upload_dir = current_app.config.get('UPLOAD_FOLDER') or os.path.join(current_app.static_folder, 'uploads')
             os.makedirs(upload_dir, exist_ok=True)
             logo_file.save(os.path.join(upload_dir, filename))
             shop.logo = f"/static/uploads/{filename}"
@@ -400,7 +400,7 @@ def create_product():
         if image_file and image_file.filename != '':
             filename = secure_filename(image_file.filename)
             filename = f"{int(time.time())}_{filename}"
-            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            upload_dir = current_app.config.get('UPLOAD_FOLDER') or os.path.join(current_app.static_folder, 'uploads')
             os.makedirs(upload_dir, exist_ok=True)
             image_file.save(os.path.join(upload_dir, filename))
             image_path = f"/static/uploads/{filename}"
@@ -437,7 +437,7 @@ def edit_product(product_id):
         if image_file and image_file.filename != '':
             filename = secure_filename(image_file.filename)
             filename = f"{int(time.time())}_{filename}"
-            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            upload_dir = current_app.config.get('UPLOAD_FOLDER') or os.path.join(current_app.static_folder, 'uploads')
             os.makedirs(upload_dir, exist_ok=True)
             image_file.save(os.path.join(upload_dir, filename))
             product.image = f"/static/uploads/{filename}"

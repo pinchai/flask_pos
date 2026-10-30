@@ -7,8 +7,11 @@ from datetime import datetime
 import requests
 from dotenv import load_dotenv
 
-# Base directory for the Flask project
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+# Base directory for the Flask project or PyInstaller executable
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Ensure environment variables are loaded from .env
 load_dotenv(os.path.join(BASE_DIR, '.env'))
@@ -29,20 +32,20 @@ def format_file_size(size_bytes: int) -> str:
 def get_database_path() -> str:
     """
     Resolve the SQLite database file path from environment variables
-    or default locations.
+    or default locations in the same directory as the executable.
     """
     db_uri = os.environ.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DATABASE_URL')
     
     if db_uri and db_uri.startswith('sqlite:///'):
         db_file = db_uri.replace('sqlite:///', '', 1)
-        if not os.path.isabs(db_file):
+        if not os.path.isabs(db_file) and not (len(db_file) > 1 and db_file[1] == ':'):
             candidate = os.path.join(BASE_DIR, db_file)
         else:
             candidate = db_file
         if os.path.exists(candidate):
             return candidate
 
-    # Check common fallback locations
+    # Check common fallback locations in the executable's directory
     candidates = [
         os.path.join(BASE_DIR, 'app.db'),
         os.path.join(BASE_DIR, 'instance', 'app.db')
