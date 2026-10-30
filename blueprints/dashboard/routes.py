@@ -1792,3 +1792,20 @@ def export_income_report():
         download_name=filename
     )
 
+
+
+@dashboard_bp.route('/backup/telegram', methods=['POST'])
+@login_required
+def backup_telegram():
+    if current_user.type != 'admin':
+        flash('Access denied. Admin role required.', 'danger')
+        return redirect(url_for('dashboard.admin_index'))
+
+    from backup import send_db_backup_to_telegram
+    success, message = send_db_backup_to_telegram()
+    if success:
+        flash(f'Backup sent to Telegram successfully: {message}', 'success')
+    else:
+        flash(f'Backup failed: {message}', 'danger')
+
+    return redirect(request.referrer or url_for('dashboard.admin_index'))

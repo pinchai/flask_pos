@@ -29,7 +29,7 @@ login_manager.init_app(app)
 jwt.init_app(app)
 limiter.init_app(app)
 login_manager.login_view = 'dashboard.login'
-login_manager.login_message_category = 'warning'
+login_message_category = 'warning'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -57,6 +57,16 @@ def seed_db_command():
     """Seeds the database with initial mockup data."""
     from seed import seed_data
     seed_data()
+
+@app.cli.command("backup-db")
+def backup_db_command():
+    """Backs up the SQLite database and sends the file to Telegram."""
+    from backup import send_db_backup_to_telegram
+    success, message = send_db_backup_to_telegram()
+    if success:
+        print(f"[SUCCESS] {message}")
+    else:
+        print(f"[ERROR] {message}")
 
 if __name__ == "__main__":
     app.run(debug=True)
